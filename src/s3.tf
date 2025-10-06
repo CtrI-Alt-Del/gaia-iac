@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "terreform_state_bucket" {
-  bucket = "${terraform.workspace}-terreform-state-bucket"
+  bucket        = "${terraform.workspace}-terreform-state-bucket"
   force_destroy = true
 
   lifecycle {
@@ -7,7 +7,7 @@ resource "aws_s3_bucket" "terreform_state_bucket" {
   }
 
   tags = {
-    IAC = true
+    IAC         = true
     Environment = terraform.workspace
   }
 }
