@@ -1,5 +1,5 @@
 resource "aws_iam_openid_connect_provider" "oidc-git" {
-  url = "https://token.actions.githubusercontent.com"
+  url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
 
   tags = {
@@ -28,7 +28,7 @@ resource "aws_iam_role" "gaia_iac_role" {
             "token.actions.githubusercontent.com:sub" = "repo:CtrI-Alt-Del/gaia-iac:*"
           }
         }
-      }
+      },
     ]
   })
 
@@ -89,7 +89,7 @@ resource "aws_iam_role_policy" "gaia_server_policy" {
           "iam:PassRole",
           "iam:CreateServiceLinkedRole",
         ]
-        Effect = "Allow"
+        Effect   = "Allow"
         Resource = "*"
       },
     ]
@@ -97,7 +97,7 @@ resource "aws_iam_role_policy" "gaia_server_policy" {
 }
 
 resource "aws_iam_role" "gaia_panel_role" {
-  name = "gaia-panel-policy"
+  name = "gaia-panel-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -120,7 +120,7 @@ resource "aws_iam_role" "gaia_panel_role" {
     ]
   })
 
-   tags = {
+  tags = {
     IAC = true
   }
 }
@@ -147,9 +147,77 @@ resource "aws_iam_role_policy" "gaia_panel_policy" {
           "iam:PassRole",
           "iam:CreateServiceLinkedRole",
         ]
-        Effect = "Allow"
+        Effect   = "Allow"
         Resource = "*"
       },
     ]
   })
 }
+
+
+resource "aws_iam_policy" "read_secrets_policy" {
+  name = "read-secrets-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "secretsmanager:GetSecretValue"
+      Effect = "Allow"
+      Resource = [
+        aws_secretsmanager_secret.postgres_db_credentials.arn,
+        data.aws_secretsmanager_secret.clerk_credentials.arn
+      ]
+    }]
+  })
+
+  tags = {
+    IAC = true
+  }
+}
+
+# Role para a execução da tarefa Fargate (puxar imagem, enviar logs)
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name = "gaia-ecs-execution-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
+    }]
+  })
+
+  tags = {
+    IAC = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attaches_read_secrets" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = aws_iam_policy.read_secrets_policy.arn
+}
+
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ecs-task-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
+    }]
+  })
+
+  tags = {
+    IAC = true
+  }
+}
+
