@@ -174,7 +174,6 @@ resource "aws_iam_policy" "read_secrets_policy" {
   }
 }
 
-# Role para a execução da tarefa Fargate (puxar imagem, enviar logs)
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "gaia-ecs-execution-role"
   assume_role_policy = jsonencode({
