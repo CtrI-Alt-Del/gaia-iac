@@ -1,0 +1,21 @@
+name: Staging Automatic Deployment
+
+on:
+  pull_request:
+    branches:
+      - GAIA-20-iac-workflow-de-deploy-automático
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Initialize Terraform
+        run: terraform init
