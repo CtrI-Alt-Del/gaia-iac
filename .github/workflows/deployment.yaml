@@ -1,7 +1,7 @@
 name: Automatic Deployment
 
 on:
-  push:
+  pull_request:
     branches:
       - main
   workflow_call:
@@ -34,7 +34,7 @@ jobs:
           terraform_version: ${{ vars.TERRAFORM_VERSION }}
 
       - name: Initialize Terraform
-        run: terraform init
+        run: terraform init -backend-config="bucket=${{ inputs.environment }}-terraform-bucket"
         working-directory: ./src
 
       - name: Deploy
