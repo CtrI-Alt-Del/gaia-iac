@@ -169,3 +169,5 @@ src/
 ├── service_discovery.tf     # AWS Cloud Map
 └── s3.tf                    # Bucket para Terraform state
 ```
+
+
