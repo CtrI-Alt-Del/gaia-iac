@@ -1,10 +1,8 @@
 resource "aws_s3_bucket" "terreform_state_bucket" {
-  bucket = "${terraform.workspace}-terreform-state-bucket"
-
+  bucket = var.aws_statefile_s3_bucket
 
   tags = {
-    IAC         = true
-    Environment = terraform.workspace
+    IAC = true
   }
 }
 
