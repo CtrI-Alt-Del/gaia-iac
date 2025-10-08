@@ -1,0 +1,44 @@
+name: Automatic Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TERRAFORM_VERSION }}
+
+      - name: Initialize Terraform
+        run: terraform init
+        working-directory: ./src
+
+      - name: Deploy
+        run: |
+          terraform workspace select ${{ inputs.environment }}
+          terraform apply -auto-approve
+        working-directory: ./src
