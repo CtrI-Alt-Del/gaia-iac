@@ -27,6 +27,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::632325908215:role/gaia-iac-role
           aws-region: ${{ secrets.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
