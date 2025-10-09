@@ -224,3 +224,14 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
+data "aws_iam_policy_document" "sns_topic_policy_doc" {
+  statement {
+    effect  = "Allow"
+    actions = ["SNS:Publish"]
+    principals {
+      type        = "Service"
+      identifiers = ["budgets.amazonaws.com"]
+    }
+    resources = [aws_sns_topic.budget_alerts.arn]
+  }
+}
