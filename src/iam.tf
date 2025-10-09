@@ -75,6 +75,14 @@ resource "aws_iam_role_policy" "gaia_iac_policy" {
           "ecs:*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "EC2FullAccess"
+        Effect = "Allow"
+        Action = [
+          "ec2:*"
+        ]
+        Resource = "*"
       }
     ]
   })
