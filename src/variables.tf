@@ -63,5 +63,3 @@ variable "gaia_server_container_memory" {
   type        = number
   default     = 1024 # 1 GB
 }
-
-
