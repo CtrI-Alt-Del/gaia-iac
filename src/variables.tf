@@ -64,8 +64,4 @@ variable "gaia_server_container_memory" {
   default     = 1024 # 1 GB
 }
 
-variable "aws_statefile_s3_bucket" {
-  description = "Bucket para armazenar o estado do Terraform"
-  type        = string
-  default     = "${terraform.workspace}-terraform-bucket"
-}
+
