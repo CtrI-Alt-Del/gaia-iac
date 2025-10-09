@@ -1,5 +1,5 @@
 resource "aws_budgets_budget" "monthly_cost" {
-  name              = "${terraform.workspace}-monthly-cost-budget"
+  name              = "monthly-cost-budget"
   budget_type       = "COST"
   limit_amount      = "100.0"
   limit_unit        = "USD"

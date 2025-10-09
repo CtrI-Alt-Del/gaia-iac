@@ -1,5 +1,5 @@
 resource "aws_sns_topic" "budget_alerts" {
-  name = "${terraform.workspace}-budget-alerts"
+  name = "budget-alerts"
 
   tags = {
     IAC = true
