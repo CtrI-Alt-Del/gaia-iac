@@ -1,9 +1,6 @@
-name: Automatic Deployment
+name: Deployment
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_call:
     inputs:
       environment:
@@ -25,7 +22,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::632325908215:role/gaia-iac-role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
           audience: sts.amazonaws.com
 
@@ -38,8 +35,10 @@ jobs:
         run: terraform init -backend-config=${{ inputs.environment }}-backend.hcl
         working-directory: ./src
 
-      - name: Deploy
-        run: |
-          terraform workspace select ${{ inputs.environment }}
-          terraform apply -auto-approve
+      - name: Select Terraform workspace
+        run: terraform workspace select ${{ inputs.environment }}
+        working-directory: ./src
+
+      - name: Apply Terraform
+        run: terraform apply -auto-approve
         working-directory: ./src

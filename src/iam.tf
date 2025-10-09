@@ -37,6 +37,32 @@ resource "aws_iam_role" "gaia_iac_role" {
   }
 }
 
+resource "aws_iam_role_policy" "gaia_iac_policy" {
+  name = "gaia-iac-policy"
+  role = aws_iam_role.gaia_iac_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "S3FullAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DynamoDBFullAccess"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
 
 resource "aws_iam_role" "gaia_server_role" {
   name = "gaia-server-role"
