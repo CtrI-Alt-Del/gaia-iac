@@ -59,6 +59,22 @@ resource "aws_iam_role_policy" "gaia_iac_policy" {
           "dynamodb:*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ECRFullAccess"
+        Effect = "Allow"
+        Action = [
+          "ecr:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECSFullAccess"
+        Effect = "Allow"
+        Action = [
+          "ecs:*"
+        ]
+        Resource = "*"
       }
     ]
   })
