@@ -83,6 +83,54 @@ resource "aws_iam_role_policy" "gaia_iac_policy" {
           "ec2:*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "RDSFullAccess"
+        Effect = "Allow"
+        Action = [
+          "rds:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "SecretsManagerFullAccess"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CloudMapFullAccess"
+        Effect = "Allow"
+        Action = [
+          "cloudmap:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CloudWatchFullAccess"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "VPCFullAccess"
+        Effect = "Allow"
+        Action = [
+          "vpc:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "IAMFullAccess"
+        Effect = "Allow"
+        Action = [
+          "iam:*"
+        ]
+        Resource = "*"
       }
     ]
   })
