@@ -1,0 +1,17 @@
+name: Staging CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/ci.yaml
+    with:
+      environment: dev
+    secrets: inherit
