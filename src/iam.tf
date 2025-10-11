@@ -37,6 +37,10 @@ resource "aws_iam_role" "gaia_iac_role" {
   }
 }
 
+resource "aws_iam_role_policy_attachment" "gaia_iac_admin_access" {
+  role       = aws_iam_role.gaia_iac_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
 
 resource "aws_iam_role" "gaia_server_role" {
   name = "gaia-server-role"
@@ -220,3 +224,14 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
+data "aws_iam_policy_document" "sns_topic_policy_doc" {
+  statement {
+    effect  = "Allow"
+    actions = ["SNS:Publish"]
+    principals {
+      type        = "Service"
+      identifiers = ["budgets.amazonaws.com"]
+    }
+    resources = [aws_sns_topic.budget_alerts.arn]
+  }
+}
