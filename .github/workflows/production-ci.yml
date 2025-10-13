@@ -1,0 +1,12 @@
+name: Production CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/ci.yaml
+    with:
+      environment: prod
