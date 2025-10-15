@@ -39,5 +39,5 @@ jobs:
         working-directory: ./src
 
       - name: Apply Terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -var-file="envs/${{ inputs.environment }}.tfvars" -auto-approve
         working-directory: ./src
