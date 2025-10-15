@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: ./.github/workflows/ci.yaml
+    uses: ./.github/workflows/ci.yml
     with:
       environment: dev
     secrets: inherit
