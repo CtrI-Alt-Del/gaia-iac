@@ -189,7 +189,7 @@ resource "aws_security_group" "gaia_server_sg" {
 
 resource "aws_security_group" "gaia_collector_sg" {
   name        = "${terraform.workspace}-${var.gaia_collector_container_name}-sg"
-  description = "Security group para o serviço do Gaia Collector"
+  description = "Security group para o servico do Gaia Collector"
   vpc_id      = aws_vpc.main.id
 
   egress {
@@ -234,7 +234,7 @@ resource "aws_db_subnet_group" "rds_sng" {
 
 resource "aws_security_group" "gaia_docdb_sg" {
   name        = "${terraform.workspace}-gaia-docdb-sg"
-  description = "Permite acesso ao DocumentDB a partir de serviços internos"
+  description = "Permite acesso ao DocumentDB a partir de servicos internos"
   vpc_id      = aws_vpc.main.id
 
   ingress {
