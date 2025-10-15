@@ -52,6 +52,24 @@ resource "aws_ecs_service" "gaia_server_service" {
   }
 }
 
+resource "aws_ecs_service" "gaia_collector_service" {
+  name            = "${terraform.workspace}-gaia-collector-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.gaia_collector_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+    security_groups  = [aws_security_group.gaia_collector_sg.id]
+    assign_public_ip = false
+  }
+
+  tags = {
+    IAC = true
+  }
+}
+
 resource "aws_ecs_task_definition" "gaia_panel_task" {
   family                   = "${terraform.workspace}-gaia-panel-task"
   network_mode             = "awsvpc"
@@ -159,6 +177,32 @@ resource "aws_ecs_task_definition" "gaia_server_task" {
   }
 }
 
+resource "aws_ecs_task_definition" "gaia_collector_task" {
+  family                   = "${terraform.workspace}-gaia-collector-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = var.gaia_collector_container_cpu
+  memory                   = var.gaia_collector_container_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+
+  container_definitions = jsonencode([{
+    name      = "${terraform.workspace}-${var.gaia_collector_container_name}"
+    image     = "${aws_ecr_repository.gaia_collector_ecr_repository.repository_url}:latest"
+    essential = true
+
+    environment = []
+
+    logConfiguration = {
+      logDriver = "awslogs",
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.gaia_collector_logs.name,
+        "awslogs-region"        = var.aws_region,
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  }])
+}
+
 resource "aws_cloudwatch_log_group" "gaia_server_logs" {
   name = "/ecs/${terraform.workspace}-${var.gaia_server_container_name}"
 
@@ -170,6 +214,15 @@ resource "aws_cloudwatch_log_group" "gaia_server_logs" {
 
 resource "aws_cloudwatch_log_group" "gaia_panel_logs" {
   name = "/ecs/${terraform.workspace}-${var.gaia_panel_container_name}"
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
+}
+
+resource "aws_cloudwatch_log_group" "gaia_collector_logs" {
+  name = "/ecs/${terraform.workspace}-${var.gaia_collector_container_name}"
 
   tags = {
     IAC         = true
