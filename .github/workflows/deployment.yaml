@@ -31,7 +31,7 @@ jobs:
           terraform_version: ${{ vars.TERRAFORM_VERSION }}
 
       - name: Initialize Terraform
-        run: terraform init -backend-config=backends/${{ inputs.environment }}-backend.hcl
+        run: terraform init
         working-directory: ./src
 
       - name: Select Terraform workspace
