@@ -35,7 +35,7 @@ jobs:
         working-directory: ./src
 
       - name: Select Terraform workspace
-        run: terraform workspace select ${{ inputs.environment }}
+        run: terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }}
         working-directory: ./src
 
       - name: Apply Terraform
