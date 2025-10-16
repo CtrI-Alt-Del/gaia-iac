@@ -193,13 +193,6 @@ resource "aws_security_group" "gaia_collector_sg" {
   vpc_id      = aws_vpc.main.id
 
   egress {
-    protocol    = "tcp"
-    from_port   = 27017
-    to_port     = 27017
-    cidr_blocks = ["192.168.248.0/21"]
-  }
-
-  egress {
     protocol    = "-1"
     from_port   = 0
     to_port     = 0
