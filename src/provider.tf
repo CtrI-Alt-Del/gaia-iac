@@ -11,7 +11,6 @@ terraform {
     key            = "gaia-terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "gaia-terraform-state-lock"
-    use_lockfile   = true
   }
 }
 
