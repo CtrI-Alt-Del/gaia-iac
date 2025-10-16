@@ -193,6 +193,13 @@ resource "aws_security_group" "gaia_collector_sg" {
   vpc_id      = aws_vpc.main.id
 
   egress {
+    protocol    = "tcp"
+    from_port   = 27017
+    to_port     = 27017
+    cidr_blocks = ["192.168.248.0/21"]
+  }
+
+  egress {
     protocol    = "-1"
     from_port   = 0
     to_port     = 0
@@ -230,40 +237,4 @@ resource "aws_security_group" "postgres_db_sg" {
 resource "aws_db_subnet_group" "rds_sng" {
   name       = "${terraform.workspace}-db-sng"
   subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-}
-
-resource "aws_security_group" "gaia_docdb_sg" {
-  name        = "${terraform.workspace}-gaia-docdb-sg"
-  description = "Permite acesso ao DocumentDB a partir de servicos internos"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description     = "Permite acesso do Gaia Collector"
-    protocol        = "tcp"
-    from_port       = 27017
-    to_port         = 27017
-    security_groups = [aws_security_group.gaia_collector_sg.id]
-  }
-
-  egress {
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    IAC         = true
-    Environment = terraform.workspace
-  }
-}
-
-resource "aws_docdb_subnet_group" "docdb_sng" {
-  name       = "${terraform.workspace}-docdb-sng"
-  subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-
-  tags = {
-    IAC         = true
-    Environment = terraform.workspace
-  }
 }
