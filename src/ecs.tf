@@ -192,6 +192,13 @@ resource "aws_ecs_task_definition" "gaia_collector_task" {
 
     environment = []
 
+    secrets = [
+      {
+        name      = "MONGO_URI",
+        valueFrom = "${data.aws_secretsmanager_secret.mongo_credentials.arn}:MONGO_URI::"
+      }
+    ]
+
     logConfiguration = {
       logDriver = "awslogs",
       options = {
@@ -200,6 +207,8 @@ resource "aws_ecs_task_definition" "gaia_collector_task" {
         "awslogs-stream-prefix" = "ecs"
       }
     }
+
+
   }])
 }
 
