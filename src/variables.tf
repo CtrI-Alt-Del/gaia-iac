@@ -28,6 +28,12 @@ variable "gaia_panel_container_memory" {
   default     = 1024 # 1 GB
 }
 
+variable "gaia_panel_desired_count" {
+  description = "Número de instâncias desejadas para o Gaia Panel."
+  type        = number
+  default     = 1
+}
+
 variable "gaia_server_app_mode" {
   description = "Modo de execução da aplicação (ex: development, staging,production)."
   type        = string
@@ -64,6 +70,12 @@ variable "gaia_server_container_memory" {
   default     = 1024
 }
 
+variable "gaia_server_desired_count" {
+  description = "Número de instâncias desejadas para o Gaia Server."
+  type        = number
+  default     = 1
+}
+
 
 variable "gaia_collector_container_name" {
   description = "Nome do contêiner da aplicação Gaia Collector"
@@ -83,18 +95,6 @@ variable "gaia_collector_container_memory" {
   default     = 512
 }
 
-variable "gaia_panel_desired_count" {
-  description = "Número de instâncias desejadas para o Gaia Panel."
-  type        = number
-  default     = 1
-}
-
-variable "gaia_server_desired_count" {
-  description = "Número de instâncias desejadas para o Gaia Server."
-  type        = number
-  default     = 1
-}
-
 variable "gaia_collector_desired_count" {
   description = "Número de instâncias desejadas para o Gaia Collector."
   type        = number
@@ -111,4 +111,48 @@ variable "rds_multi_az" {
   description = "Habilita a alta disponibilidade (Multi-AZ) para o RDS."
   type        = bool
   default     = false
+}
+
+variable "elasticache_instance_class" {
+  description = "Classe da instância para o banco de dados ElastiCache (ex: cache.t4g.micro)."
+  type        = string
+  default     = "cache.t4g.micro"
+}
+
+# No arquivo variables.tf
+
+variable "panel_min_capacity" {
+  description = "Número mínimo de tasks para o Gaia Panel."
+  type        = number
+  default     = 1 # Padrão para dev
+}
+
+variable "panel_max_capacity" {
+  description = "Número máximo de tasks para o Gaia Panel."
+  type        = number
+  default     = 2 # Padrão para dev
+}
+
+variable "server_min_capacity" {
+  description = "Número mínimo de tasks para o Gaia Server."
+  type        = number
+  default     = 1
+}
+
+variable "server_max_capacity" {
+  description = "Número máximo de tasks para o Gaia Server."
+  type        = number
+  default     = 4 # Exemplo: permitir escalar até 4 tasks em prod
+}
+
+variable "collector_min_capacity" {
+  description = "Número mínimo de tasks para o Gaia Collector."
+  type        = number
+  default     = 1
+}
+
+variable "collector_max_capacity" {
+  description = "Número máximo de tasks para o Gaia Collector."
+  type        = number
+  default     = 3
 }
