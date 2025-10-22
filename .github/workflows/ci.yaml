@@ -1,4 +1,4 @@
-name: Terraform CI
+name: Continuous Integration
 
 on:
   workflow_call:
@@ -31,14 +31,14 @@ jobs:
           terraform_version: ${{ vars.TERRAFORM_VERSION }}
 
       - name: Terraform Init
-        run: terraform init -backend-config=backends/${{ inputs.environment }}-backend.hcl
+        run: terraform init
         working-directory: ./src
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ./src
 
-      - name: Terraform Select 
+      - name: Terraform Select
         run: terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }}
         working-directory: ./src
 
@@ -47,5 +47,5 @@ jobs:
         working-directory: ./src
 
       - name: Terraform Plan
-        run: terraform plan -var-file="envs/${{ inputs.environment }}/terraform.tfvars" -out="${{ inputs.environment }}.plan"
+        run: terraform plan -var-file="envs/${{ inputs.environment }}.tfvars" -out="${{ inputs.environment }}.plan"
         working-directory: ./src

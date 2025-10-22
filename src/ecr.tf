@@ -26,3 +26,16 @@ resource "aws_ecr_repository" "gaia_panel_ecr_repository" {
   }
 }
 
+resource "aws_ecr_repository" "gaia_collector_ecr_repository" {
+  name                 = "${terraform.workspace}-gaia-collector-ecr-repository"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
+}

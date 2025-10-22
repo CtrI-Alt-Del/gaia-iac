@@ -61,7 +61,7 @@ variable "gaia_server_container_port" {
 variable "gaia_server_container_cpu" {
   description = "Unidades de CPU para alocar à tarefa Fargate para a aplicação Gaia Server"
   type        = number
-  default     = 512 # 0.5 vCPU
+  default     = 512
 }
 
 variable "gaia_server_container_memory" {
@@ -100,8 +100,6 @@ variable "gaia_collector_desired_count" {
   type        = number
   default     = 1
 }
-
-
 
 variable "rds_instance_class" {
   description = "Classe da instância para o banco de dados RDS (ex: db.t4g.micro)."
