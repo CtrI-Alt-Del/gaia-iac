@@ -213,3 +213,39 @@ resource "aws_db_subnet_group" "rds_sng" {
   name       = "${terraform.workspace}-db-sng"
   subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 }
+
+resource "aws_security_group" "elasticache_sg" {
+  name        = "${terraform.workspace}-elasticache-sg"
+  description = "Permite trafego Elasticache de entrada vindo do Gaia Server"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Acesso Elasticache a partir do Gaia Server"
+    protocol        = "tcp"
+    from_port       = 6379
+    to_port         = 6379
+    security_groups = [aws_security_group.gaia_server_sg.id]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
+}
+
+resource "aws_elasticache_subnet_group" "elasticache_sng" {
+  name       = "${terraform.workspace}-elasticache-sng"
+  subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
+}
