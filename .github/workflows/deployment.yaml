@@ -8,7 +8,7 @@ on:
         required: true
 
 jobs:
-  terraform:
+  terraform-deployment:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,13 +31,13 @@ jobs:
           terraform_version: ${{ vars.TERRAFORM_VERSION }}
 
       - name: Initialize Terraform
-        run: terraform init -backend-config=backends/${{ inputs.environment }}-backend.hcl
+        run: terraform init
         working-directory: ./src
 
       - name: Select Terraform workspace
-        run: terraform workspace select ${{ inputs.environment }}
+        run: terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }}
         working-directory: ./src
 
       - name: Apply Terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -var-file="envs/${{ inputs.environment }}.tfvars" -auto-approve
         working-directory: ./src
