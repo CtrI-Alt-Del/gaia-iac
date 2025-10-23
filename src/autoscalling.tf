@@ -1,12 +1,12 @@
 resource "aws_appautoscaling_target" "panel_target" {
-  max_capacity       = var.panel_max_capacity # Lê o máximo do .tfvars
-  min_capacity       = var.panel_min_capacity # Lê o mínimo do .tfvars
+  max_capacity = var.panel_max_capacity # Lê o máximo do .tfvars
+  min_capacity = var.panel_min_capacity # Lê o mínimo do .tfvars
   # Identifica o serviço ECS a ser escalado
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.panel_service.name}"
+  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.panel_service.name}"
   # Diz que queremos escalar o número de tasks (DesiredCount)
   scalable_dimension = "ecs:service:DesiredCount"
   # Define o namespace do serviço (ECS)
-  service_namespace  = "ecs"
+  service_namespace = "ecs"
 }
 
 resource "aws_appautoscaling_policy" "panel_cpu_scaling" {
@@ -18,20 +18,13 @@ resource "aws_appautoscaling_policy" "panel_cpu_scaling" {
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
-      # Métrica a ser rastreada: Utilização média de CPU do serviço
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    # Objetivo: Manter a CPU média em 70%
     target_value       = 70.0
-    # Cooldowns: Evita que o scaling aconteça rápido demais (em segundos)
-    scale_in_cooldown  = 300 # Espera 5 minutos antes de remover tasks
-    scale_out_cooldown = 60  # Espera 1 minuto antes de adicionar mais tasks
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
   }
 }
-
-# Arquivo: autoscaling.tf (ou 05-ecs.tf)
-
-# --- Auto Scaling para Gaia Server ---
 
 resource "aws_appautoscaling_target" "server_target" {
   max_capacity       = var.server_max_capacity
@@ -82,7 +75,7 @@ resource "aws_appautoscaling_policy" "collector_cpu_scaling" {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
     # Para o collector, pode fazer sentido um alvo de CPU mais alto, ex: 80%
-    target_value       = 80.0 
+    target_value       = 80.0
     scale_in_cooldown  = 300
     scale_out_cooldown = 60
   }

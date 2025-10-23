@@ -2,7 +2,7 @@ resource "aws_db_instance" "postgres_db" {
   identifier     = "${terraform.workspace}-gaia-postgres-db"
   engine         = "postgres"
   engine_version = "17.6"
-  instance_class = "db.t4g.micro"
+  instance_class = var.rds_instance_class
 
   allocated_storage = 20
 
@@ -14,7 +14,7 @@ resource "aws_db_instance" "postgres_db" {
   vpc_security_group_ids = [aws_security_group.postgres_db_sg.id]
 
   publicly_accessible = false
-  multi_az            = false
+  multi_az            = var.rds_multi_az
   skip_final_snapshot = true
 
   tags = {
