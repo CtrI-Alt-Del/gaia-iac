@@ -10,7 +10,6 @@ resource "aws_ecs_service" "panel_service" {
   name            = "${terraform.workspace}-${var.gaia_panel_container_name}-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.gaia_panel_task.arn
-  desired_count   = var.gaia_panel_desired_count
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -34,8 +33,8 @@ resource "aws_ecs_service" "gaia_server_service" {
   name            = "${terraform.workspace}-${var.gaia_server_container_name}-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.gaia_server_task.arn
-  desired_count   = var.gaia_server_desired_count
-  launch_type     = "FARGATE"
+  # desired_count   = var.gaia_server_desired_count
+  launch_type = "FARGATE"
 
   network_configuration {
     subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
@@ -56,8 +55,8 @@ resource "aws_ecs_service" "gaia_collector_service" {
   name            = "${terraform.workspace}-gaia-collector-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.gaia_collector_task.arn
-  desired_count   = var.gaia_collector_desired_count
-  launch_type     = "FARGATE"
+  # desired_count   = var.gaia_collector_desired_count
+  launch_type = "FARGATE"
 
   network_configuration {
     subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]

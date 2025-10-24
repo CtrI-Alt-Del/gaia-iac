@@ -28,10 +28,16 @@ variable "gaia_panel_container_memory" {
   default     = 1024 # 1 GB
 }
 
-variable "gaia_panel_desired_count" {
-  description = "Número de instâncias desejadas para o Gaia Panel."
+variable "panel_min_capacity" {
+  description = "Número mínimo de tasks para o Gaia Panel."
   type        = number
-  default     = 1
+  default     = 1 # Padrão para dev
+}
+
+variable "panel_max_capacity" {
+  description = "Número máximo de tasks para o Gaia Panel."
+  type        = number
+  default     = 2 # Padrão para dev
 }
 
 variable "gaia_server_app_mode" {
@@ -70,12 +76,17 @@ variable "gaia_server_container_memory" {
   default     = 1024
 }
 
-variable "gaia_server_desired_count" {
-  description = "Número de instâncias desejadas para o Gaia Server."
+variable "server_min_capacity" {
+  description = "Número mínimo de tasks para o Gaia Server."
   type        = number
   default     = 1
 }
 
+variable "server_max_capacity" {
+  description = "Número máximo de tasks para o Gaia Server."
+  type        = number
+  default     = 4
+}
 
 variable "gaia_collector_container_name" {
   description = "Nome do contêiner da aplicação Gaia Collector"
@@ -95,10 +106,16 @@ variable "gaia_collector_container_memory" {
   default     = 512
 }
 
-variable "gaia_collector_desired_count" {
-  description = "Número de instâncias desejadas para o Gaia Collector."
+variable "collector_min_capacity" {
+  description = "Número mínimo de tasks para o Gaia Collector."
   type        = number
   default     = 1
+}
+
+variable "collector_max_capacity" {
+  description = "Número máximo de tasks para o Gaia Collector."
+  type        = number
+  default     = 3
 }
 
 variable "rds_instance_class" {
