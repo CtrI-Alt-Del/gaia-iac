@@ -1,4 +1,3 @@
-
 gaia_server_container_cpu    = 512  # 0.5 vCPU
 gaia_server_container_memory = 1024 # 1 GB
 server_min_capacity          = 2    # Mínimo de 2 instâncias para HA
