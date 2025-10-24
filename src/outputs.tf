@@ -17,3 +17,8 @@ output "db_credentials_secret_arn" {
   description = "ARN do segredo com as credenciais do banco de dados"
   value       = aws_secretsmanager_secret.postgres_db_credentials.arn
 }
+
+output "elasticache_primary_endpoint" {
+  description = "O endpoint de conexão para o cluster ElastiCache Redis"
+  value       = aws_elasticache_replication_group.elasticache.primary_endpoint_address
+}
