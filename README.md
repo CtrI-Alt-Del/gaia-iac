@@ -12,20 +12,28 @@
 - [Visão Geral](#visão-geral)
 - [Diagrama da Arquitetura](#diagrama-da-arquitetura)
 - [Arquitetura da Infraestrutura](#arquitetura-da-infraestrutura)
-  - [1. A Fundação: Rede Segura (VPC)](#1-a-fundação-rede-segura-vpc)
-  - [2. A Camada Pública: Interação com o Mundo](#2-a-camada-pública-interação-com-o-mundo)
-  - [3. A Camada Privada: O "Cofre" Seguro](#3-a-camada-privada-o-cofre-seguro)
-  - [4. A "Cola": Comunicação e Segurança](#4-a-cola-comunicação-e-segurança)
-  - [5. A Automação: O "Piloto Automático"](#5-a-automação-o-piloto-automático)
+  - [1. Rede e VPC](#1-rede-e-vpc)
+  - [2. Camada Pública](#2-camada-pública)
+  - [3. Camada Privada](#3-camada-privada)
+  - [4. Observabilidade e Custos](#4-observabilidade-e-custos)
+  - [5. Segurança e Segredos](#5-segurança-e-segredos)
 - [Componentes Implementados](#componentes-implementados)
+  - [Provisionados](#provisionados)
+  - [Planejados](#planejados)
 - [Como Usar](#como-usar)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Preparar o Backend Remoto do Terraform](#preparar-o-backend-remoto-do-terraform)
+  - [Configurar Segredos no AWS Secrets Manager](#configurar-segredos-no-aws-secrets-manager)
+  - [Execução Manual](#execução-manual)
+- [Pipelines CI/CD](#pipelines-cicd)
 - [Estrutura do Projeto](#estrutura-do-projeto)
+- [Principais Saídas](#principais-saídas)
 
 ---
 
 ## 🎯 Visão Geral
 
-Sua infraestrutura na AWS foi projetada para hospedar um ecossistema de aplicações (Gaia) de forma segura e escalável. Ela utiliza um modelo de **"defesa em camadas"**, separando os serviços que precisam ser públicos dos serviços de backend e bancos de dados, que permanecem privados e protegidos. Todo o ambiente é gerenciado como código (IaC) com Terraform e implantado automaticamente com pipelines de CI/CD no GitHub Actions.
+A infraestrutura da plataforma Gaia é descrita integralmente em Terraform e provisionada na AWS com foco em segurança, escalabilidade e automação. O desenho separa cargas públicas e privadas em sub-redes distintas, aproveitando Fargate para execução dos contêineres e serviços gerenciados para banco de dados, cache e observabilidade. Os pipelines em GitHub Actions garantem que qualquer alteração passe por validação e deployments consistentes entre ambientes `dev` (staging) e `prod`.
 
 ---
 
@@ -37,70 +45,55 @@ Sua infraestrutura na AWS foi projetada para hospedar um ecossistema de aplicaç
 
 ## 🏗️ Arquitetura da Infraestrutura
 
-### 1. A Fundação: Rede Segura (VPC)
+### 1. Rede e VPC
 
-A base de toda a sua infraestrutura é uma **Virtual Private Cloud (VPC)** customizada, que funciona como sua própria rede isolada na AWS. Ela é dividida em:
+- VPC dedicada (`10.0.0.0/16`) com DNS habilitado e quatro sub-redes (duas públicas, duas privadas) distribuídas entre Zonas de Disponibilidade.
+- Internet Gateway expõe apenas a camada necessária, enquanto um NAT Gateway nas sub-redes públicas permite saída controlada a workloads privados.
+- Tabelas de rota isolam tráfego entre camadas, mantendo fluxos explícitos para internet e comunicação leste-oeste.
 
-- **Sub-redes Públicas**: Duas sub-redes em Zonas de Disponibilidade diferentes que se comunicam com a internet através de um Internet Gateway. É a "zona desmilitarizada" (DMZ) da sua arquitetura.
-- **Sub-redes Privadas**: Duas sub-redes também em Zonas de Disponibilidade diferentes que não têm acesso direto da internet. Para que os serviços aqui possam fazer chamadas para fora (ex: baixar atualizações), eles usam um NAT Gateway que fica na sub-rede pública.
+### 2. Camada Pública
 
-### 2. A Camada Pública: Interação com o Mundo
+- **Application Load Balancer (ALB)** recebe o tráfego HTTP, aplica regras de host/path e encaminha requisições para os serviços internos.
+- **Gaia Panel (frontend)** roda em tarefas Fargate nas sub-redes públicas com IPs públicos e se comunica com a camada privada por meio do ALB e do Cloud Map.
 
-Os únicos componentes que interagem diretamente com a internet são:
+### 3. Camada Privada
 
-- **Application Load Balancer (ALB)**: É a porta de entrada para usuários. Ele recebe todo o tráfego web, o distribui para garantir alta disponibilidade e o encaminha para o Gaia Panel.
-- **Serviço Gaia Panel (Frontend)**: Sua aplicação Remix/frontend roda em contêineres gerenciados pelo ECS Fargate nas sub-redes públicas. É a interface com a qual seus usuários interagem.
-- **Instância EC2 com HiveMQ**: Seu broker MQTT roda em uma instância EC2 na sub-rede pública. Isso é necessário para que seus dispositivos IoT, que estão na internet, possam se conectar e publicar dados.
+- **Gaia Server (backend)** executa em Fargate nas sub-redes privadas, exposto via Service Discovery. Consome PostgreSQL, Redis e segredos do Secrets Manager.
+- **Gaia Collector** permanece privado, conectando-se ao broker MQTT (fora do escopo deste módulo) e persistindo dados via `MONGO_URI`.
+- **RDS PostgreSQL** provê armazenamento relacional com subnets privadas e acesso restrito ao servidor de aplicação.
+- **ElastiCache Redis** entrega cache compartilhado ao Gaia Server, com regras de segurança que aceitam tráfego apenas da aplicação.
+- **DocumentDB** permanece planejado; por enquanto, sua conexão é injetada via segredo (`MONGO_URI`) e deve apontar para uma instância existente.
 
-### 3. A Camada Privada: O "Cofre" Seguro
+### 4. Observabilidade e Custos
 
-Esta é a camada principal e protegida, inacessível pela internet.
+- Grupos de logs no CloudWatch (`/ecs/...`) armazenam métricas e registros das tasks do Panel, Server e Collector.
+- Auto Scaling alvo (Application Auto Scaling) ajusta a quantidade de tarefas Fargate conforme o uso de CPU para cada serviço.
+- AWS Budgets integrado a um tópico SNS envia alertas por e-mail quando os custos mensais reais ou previstos superam o limite configurado.
 
-- **Serviço Gaia Server (Backend)**: Sua API NestJS roda em contêineres Fargate nas sub-redes privadas. Ela contém sua lógica de negócios principal.
-- **Serviço Gaia Collector**: Uma aplicação Node.js, também em Fargate na sub-rede privada, cuja única função é se conectar ao broker HiveMQ para "escutar" e coletar os dados dos dispositivos IoT.
-- **Banco de Dados (RDS PostgreSQL)**: Sua base de dados relacional fica na sub-rede privada, garantindo que apenas serviços autorizados (neste caso, o Gaia Server) possam acessá-la.
-- **Banco de Dados (DocumentDB)**: O banco NoSQL para armazenar os dados brutos do Gaia Collector também reside na sub-rede privada.
-- **Função Lambda (Gaia Parser)**: Uma função serverless que também opera dentro da rede privada. Ela é acionada periodicamente pelo EventBridge para ler dados do DocumentDB, processá-los e salvá-los no PostgreSQL.
+### 5. Segurança e Segredos
 
-### 4. A "Cola": Comunicação e Segurança
-
-- **AWS Cloud Map (Service Discovery)**: É o serviço que possibilita a comunicação interna. Quando o Gaia Panel (público) precisa falar com o Gaia Server (privado), ele usa um endereço de DNS privado fornecido pelo Cloud Map (ex: `http://dev-gaia-server-sd.dev.gaia.local`), e a AWS direciona o tráfego de forma segura dentro da VPC.
-- **Security Groups**: Atuam como firewalls em cada camada. O ALB só fala com o Panel, o Panel só fala com o Server, e o Server só fala com o Banco de Dados, criando um fluxo de tráfego estritamente controlado.
-- **IAM (Identity and Access Management)**: Gerencia todas as permissões. As roles do GitHub Actions permitem que suas pipelines de CI/CD interajam com a AWS, e as roles do ECS dão as permissões necessárias para suas aplicações rodarem e se comunicarem.
-- **AWS Secrets Manager**: Armazena de forma centralizada e segura todas as credenciais e chaves de API, que são injetadas nas suas aplicações em tempo de execução.
-
-### 5. A Automação: O "Piloto Automático"
-
-- **Terraform (IaC)**: Todo o sistema descrito acima é definido como código em um repositório (gaia-iac), garantindo consistência e rastreabilidade. O estado do Terraform é armazenado de forma segura no S3 com bloqueio de estado via DynamoDB.
-- **GitHub Actions (CI/CD)**: Você tem pipelines separadas para cada aplicação (server, panel) e para a infraestrutura (iac). Qualquer alteração no código dispara a pipeline correspondente, que automaticamente constrói, testa e implanta a nova versão na AWS sem intervenção manual.
+- Security Groups encadeados controlam cada fluxo: ALB → Panel → Server → RDS/Redis, evitando exposição indevida.
+- IAM com OIDC do GitHub Actions concede permissões mínimas para os repositórios `gaia-iac`, `gaia-server`, `gaia-panel` e `gaia-collector` realizarem deploys e interagirem com a AWS.
+- Secrets Manager guarda credenciais sensíveis e é consumido pelas tasks ECS através das roles configuradas, garantindo rotação e isolamento por ambiente.
+- A política de ECS Exec libera acesso seguro ao console das tasks via Session Manager.
 
 ---
 
 ## 🧩 Componentes Implementados
 
-### ✅ Atualmente Disponíveis
+### ✅ Provisionados
 
-- **🌐 VPC e Networking**: VPC customizada com subnets públicas e privadas
-- **🔒 Security Groups**: Firewall configurado em camadas
-- **⚖️ Application Load Balancer**: Distribuição de tráfego HTTP
-- **🐳 ECS Fargate**: Orquestração de containers serverless
-- **🗄️ RDS PostgreSQL**: Banco de dados relacional
-- **📦 ECR**: Repositórios para imagens Docker
-- **🔍 Service Discovery**: Comunicação interna via AWS Cloud Map
-- **🔐 Secrets Manager**: Gerenciamento seguro de credenciais
-- **👤 IAM Roles**: Permissões para GitHub Actions e ECS
-- **📊 CloudWatch**: Logs centralizados
-
-### 🚧 Planejados para Implementação
-
-- **📡 HiveMQ em EC2**: Broker MQTT para dispositivos IoT
-- **🔄 Gaia Collector**: Serviço de coleta de dados IoT
-- **📄 DocumentDB**: Banco NoSQL para dados brutos
-- **⚡ Lambda Functions**: Processamento serverless (Gaia Parser)
-- **⏰ EventBridge**: Agendamento de tarefas
-- **🔄 Auto Scaling**: Escalabilidade automática
-- **🛡️ WAF**: Web Application Firewall
-- **📈 CloudWatch Alarms**: Monitoramento e alertas
+- 🌐 **VPC e Networking** – Sub-redes públicas/privadas, IGW e NAT configurados.
+- ⚖️ **Application Load Balancer** – Regras para frontend e backend, health checks dedicados.
+- 🐳 **ECS Fargate Cluster** – Serviços para Panel, Server e Collector com execution role dedicada.
+- 🗄️ **RDS PostgreSQL** – Banco relacional privado com senha gerada dinamicamente.
+- 🔁 **Service Discovery (Cloud Map)** – DNS interno para o Gaia Server.
+- 🔐 **Secrets Manager** – Segredos para banco, Clerk, Mongo e broker MQTT, com IAM restritivo.
+- 📦 **ECR Repositories** – Repositórios para as imagens Panel, Server e Collector.
+- 🚀 **Auto Scaling** – Policies de CPU para ajustar `desired_count` das tasks.
+- 📉 **CloudWatch Logs** – Grupos de logs específicos por serviço.
+- 💸 **Budgets + SNS** – Budget mensal com notificações de custo.
+- 🧠 **ElastiCache Redis** – Endpoint privado usado pelo Gaia Server.
 
 ---
 
@@ -108,66 +101,125 @@ Esta é a camada principal e protegida, inacessível pela internet.
 
 ### Pré-requisitos
 
-- AWS CLI configurado
-- Terraform >= 1.0
-- Credenciais AWS com permissões adequadas
+- Terraform `>= 1.6`
+- AWS CLI configurado com credenciais que possuam privilégios para criar os recursos descritos.
+- Bucket S3 e tabela DynamoDB destinados ao backend remoto (veja abaixo).
+- Acesso ao AWS Secrets Manager para criar/atualizar os segredos exigidos por ambiente.
 
-### Implantação
+### Preparar o Backend Remoto do Terraform
 
-1. **Clone o repositório**:
+O backend definido em `src/provider.tf` assume:
+
+- Bucket S3 `gaia-terraform-state-bucket`
+- Tabela DynamoDB `gaia-terraform-state-lock`
+- Região `us-east-1`
+
+Crie esses recursos previamente ou ajuste os nomes/atributos no arquivo para refletir a sua conta.
+
+### Configurar Segredos no AWS Secrets Manager
+
+Para cada ambiente (workspace do Terraform), crie os seguintes segredos:
+
+- `<workspace>/clerk/credentials`
+  - `CLERK_PUBLISHABLE_KEY`
+  - `CLERK_SECRET_KEY`
+- `<workspace>/mongo/credentials`
+  - `MONGO_URI`
+- `<workspace>/mqtt_broker/credentials`
+  - `MQTT_BROKER_URL`
+  - `MQTT_USERNAME`
+  - `MQTT_PASSWORD`
+  - `MQTT_PORT`
+  - `MQTT_TOPIC`
+
+> O segredo `<workspace>/postgres_db/credentials` é criado automaticamente por este módulo, com senha randômica gerada via Terraform.
+
+### Execução Manual
+
+1. Clone o repositório e acesse a pasta `src`:
    ```bash
    git clone https://github.com/CtrI-Alt-Del/gaia-iac.git
    cd gaia-iac/src
    ```
-
-2. **Configure o workspace do Terraform**:
-   ```bash
-   terraform workspace new dev  # ou staging, production
-   terraform workspace select dev
-   ```
-
-3. **Inicialize o Terraform**:
+2. Inicialize o Terraform:
    ```bash
    terraform init
    ```
-
-4. **Planeje a implantação**:
+3. Selecione (ou crie) o workspace desejado:
    ```bash
-   terraform plan
+   terraform workspace select dev || terraform workspace new dev
+   ```
+4. Ajuste as variáveis conforme necessário em `envs/<workspace>.tfvars`.
+5. Planeje e aplique as mudanças:
+   ```bash
+   terraform plan  -var-file="envs/dev.tfvars"
+   terraform apply -var-file="envs/dev.tfvars"
    ```
 
-5. **Aplique as mudanças**:
-   ```bash
-   terraform apply
-   ```
+---
 
-### Variáveis de Ambiente
+## 🤖 Pipelines CI/Deployment
 
-As principais variáveis podem ser configuradas em `variables.tf`:
+Os workflows do GitHub Actions automatizam validações e deploys:
 
-- `aws_region`: Região AWS (padrão: us-east-1)
-- `gaia_panel_container_port`: Porta do frontend (padrão: 3000)
-- `gaia_server_container_port`: Porta do backend (padrão: 3333)
-- `gaia_server_app_mode`: Modo da aplicação (padrão: staging)
+- **Continuous Integration (`.github/workflows/ci.yaml`)** é um workflow reutilizável que executa `terraform fmt -check`, `terraform validate` e `terraform plan`. Recebe o ambiente como entrada.
+- **Staging Deployment** (`staging-deployment.yaml`) roda em cada push na branch `main`, chamando o workflow de deployment com `environment=dev`.
+- **Production Deployment** (`production-deployment.yaml`) é disparado em pushes para a branch `production`, aplicando `envs/prod.tfvars`.
+- **Production CI** (`production-ci.yaml`) é acionado em pull requests para a branch `production`, garantindo que alterações críticas passem por `plan` antes do merge.
+
+Configure no repositório:
+
+- Secrets `AWS_ROLE_ARN` e `AWS_REGION` com os valores usados para assumir a role IAM.
+- Repository variable `TERRAFORM_VERSION` com a versão que deve ser instalada nas ações.
 
 ---
 
 ## 📁 Estrutura do Projeto
 
 ```
+documentation/
+└── media/
+    └── infra-diagram.png     # Diagrama de referência da arquitetura
+
 src/
-├── provider.tf              # Configuração do provider AWS
-├── variables.tf             # Variáveis do projeto
-├── outputs.tf               # Outputs da infraestrutura
-├── vpc.tf                   # VPC, subnets e security groups
-├── alb.tf                   # Application Load Balancer
-├── ecs.tf                   # ECS cluster e services
-├── rds.tf                   # Banco de dados PostgreSQL
-├── ecr.tf                   # Repositórios Docker
-├── iam.tf                   # Roles e políticas IAM
-├── secrets_manager.tf       # Gerenciamento de secrets
-├── service_discovery.tf     # AWS Cloud Map
-└── s3.tf                    # Bucket para Terraform state
+├── alb.tf                   # Application Load Balancer e listeners
+├── autoscalling.tf          # Regras de auto scaling para os serviços ECS
+├── budgets.tf               # Budget mensal conectado ao SNS
+├── ecr.tf                   # Repositórios ECR das aplicações
+├── ecs.tf                   # Cluster e serviços ECS (Panel, Server, Collector)
+├── elasticache.tf           # Replication group Redis e subnet/security groups
+├── envs/
+│   ├── dev.tfvars           # Overrides para o ambiente de desenvolvimento
+│   └── prod.tfvars          # Overrides para o ambiente de produção
+├── iam.tf                   # Roles, policies e integrações com OIDC
+├── outputs.tf               # Saídas importantes da stack
+├── provider.tf              # Provider AWS e backend remoto em S3/DynamoDB
+├── rds.tf                   # Instância PostgreSQL e subnet group
+├── secrets_manager.tf       # Segredos gerenciados e senhas randômicas
+├── service_discovery.tf     # Namespace privado e serviço no Cloud Map
+├── sns.tf                   # Tópico e assinatura para alertas de budget
+├── variables.tf             # Variáveis com defaults e descrições
+└── vpc.tf                   # VPC, sub-redes, NAT, IGW e security groups
+
+.github/
+└── workflows/
+    ├── ci.yaml
+    ├── deployment.yaml
+    ├── production-ci.yaml
+    ├── production-deployment.yaml
+    └── staging-deployment.yaml
 ```
 
+---
 
+## 📤 Principais Saídas
+
+Após aplicar o Terraform, utilize `terraform output` para obter:
+
+- `alb_dns_name` – endpoint público do ALB.
+- `ecr_repository_url` – URL do ECR para publicar a imagem do Gaia Server.
+- `db_endpoint` – endpoint interno do PostgreSQL.
+- `db_credentials_secret_arn` – ARN do segredo com usuário/senha do banco.
+- `elasticache_primary_endpoint` – endpoint do cluster Redis para o Gaia Server.
+
+---
