@@ -1,0 +1,12 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deployment.yaml
+    with:
+      environment: prod
