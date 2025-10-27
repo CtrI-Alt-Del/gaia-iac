@@ -196,6 +196,7 @@ resource "aws_ecs_task_definition" "gaia_collector_task" {
   cpu                      = var.gaia_collector_container_cpu
   memory                   = var.gaia_collector_container_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([{
     name      = "${terraform.workspace}-${var.gaia_collector_container_name}"
