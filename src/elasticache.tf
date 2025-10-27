@@ -10,8 +10,8 @@ resource "aws_elasticache_replication_group" "elasticache" {
   subnet_group_name  = aws_elasticache_subnet_group.elasticache_sng.name
   security_group_ids = [aws_security_group.elasticache_sg.id]
 
-  transit_encryption_enabled = false
-  at_rest_encryption_enabled = false
+  transit_encryption_enabled = var.elasticache_transit_encryption_enabled
+  at_rest_encryption_enabled = var.elasticache_at_rest_encryption_enabled
 
   tags = {
     IAC         = true

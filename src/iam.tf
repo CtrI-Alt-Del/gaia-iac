@@ -158,6 +158,63 @@ resource "aws_iam_role_policy" "gaia_panel_policy" {
   })
 }
 
+resource "aws_iam_role" "gaia_collector_role" {
+  name = "gaia-collector-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "sts:AssumeRoleWithWebIdentity",
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.oidc-git.arn
+        },
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          },
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:CtrI-Alt-Del/gaia-collector:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    IAC = true
+  }
+}
+
+resource "aws_iam_role_policy" "gaia_collector_policy" {
+  name = "gaia-collector-policy"
+  role = aws_iam_role.gaia_collector_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "ECSECRPermissions"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:BatchGetImage",
+          "ecs:*",
+          "iam:PassRole",
+          "iam:CreateServiceLinkedRole",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
 
 resource "aws_iam_policy" "read_secrets_policy" {
   name = "read-secrets-policy"
@@ -168,7 +225,9 @@ resource "aws_iam_policy" "read_secrets_policy" {
       Effect = "Allow"
       Resource = [
         aws_secretsmanager_secret.postgres_db_credentials.arn,
-        data.aws_secretsmanager_secret.clerk_credentials.arn
+        data.aws_secretsmanager_secret.clerk_credentials.arn,
+        data.aws_secretsmanager_secret.mqtt_broker_credentials.arn,
+        data.aws_secretsmanager_secret.mongo_credentials.arn,
       ]
     }]
   })
@@ -234,4 +293,34 @@ data "aws_iam_policy_document" "sns_topic_policy_doc" {
     }
     resources = [aws_sns_topic.budget_alerts.arn]
   }
+}
+
+resource "aws_iam_policy" "ecs_exec_policy" {
+  name        = "${terraform.workspace}-ecs-exec-policy"
+  description = "Permite que as tasks do ECS se comuniquem com o SSM para o ECS Exec"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = {
+    IAC = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_role_attaches_exec_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_exec_policy.arn
 }

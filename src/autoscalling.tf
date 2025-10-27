@@ -4,6 +4,11 @@ resource "aws_appautoscaling_target" "panel_target" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.panel_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
 }
 
 resource "aws_appautoscaling_policy" "panel_cpu_scaling" {
@@ -26,9 +31,14 @@ resource "aws_appautoscaling_policy" "panel_cpu_scaling" {
 resource "aws_appautoscaling_target" "server_target" {
   max_capacity       = var.server_max_capacity
   min_capacity       = var.server_min_capacity
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.gaia_server_service.name}" #
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.gaia_server_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
 }
 
 resource "aws_appautoscaling_policy" "server_cpu_scaling" {
@@ -51,9 +61,14 @@ resource "aws_appautoscaling_policy" "server_cpu_scaling" {
 resource "aws_appautoscaling_target" "collector_target" {
   max_capacity       = var.collector_max_capacity
   min_capacity       = var.collector_min_capacity
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.gaia_collector_service.name}" #
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.gaia_collector_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  tags = {
+    IAC         = true
+    Environment = terraform.workspace
+  }
 }
 
 resource "aws_appautoscaling_policy" "collector_cpu_scaling" {

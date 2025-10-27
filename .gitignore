@@ -4,3 +4,5 @@
 .terraform
 
 .env
+
+keys/gaia-jump-server-key.pem

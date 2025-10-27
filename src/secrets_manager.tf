@@ -24,3 +24,7 @@ data "aws_secretsmanager_secret" "clerk_credentials" {
 data "aws_secretsmanager_secret" "mongo_credentials" {
   name = "${terraform.workspace}/mongo/credentials"
 }
+
+data "aws_secretsmanager_secret" "mqtt_broker_credentials" {
+  name = "${terraform.workspace}/mqtt_broker/credentials"
+}

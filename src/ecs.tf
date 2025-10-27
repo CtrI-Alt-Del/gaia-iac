@@ -7,10 +7,11 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_ecs_service" "panel_service" {
-  name            = "${terraform.workspace}-${var.gaia_panel_container_name}-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.gaia_panel_task.arn
-  launch_type     = "FARGATE"
+  name                   = "${terraform.workspace}-${var.gaia_panel_container_name}-service"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.gaia_panel_task.arn
+  launch_type            = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
@@ -24,17 +25,22 @@ resource "aws_ecs_service" "panel_service" {
     container_port   = var.gaia_panel_container_port
   }
 
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   tags = {
     IAC = true
   }
 }
 
 resource "aws_ecs_service" "gaia_server_service" {
-  name            = "${terraform.workspace}-${var.gaia_server_container_name}-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.gaia_server_task.arn
-  # desired_count   = var.gaia_server_desired_count
-  launch_type = "FARGATE"
+  name                   = "${terraform.workspace}-${var.gaia_server_container_name}-service"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.gaia_server_task.arn
+  launch_type            = "FARGATE"
+  desired_count          = 1
+  enable_execute_command = true
 
   network_configuration {
     subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
@@ -52,11 +58,12 @@ resource "aws_ecs_service" "gaia_server_service" {
 }
 
 resource "aws_ecs_service" "gaia_collector_service" {
-  name            = "${terraform.workspace}-gaia-collector-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.gaia_collector_task.arn
-  # desired_count   = var.gaia_collector_desired_count
-  launch_type = "FARGATE"
+  name                   = "${terraform.workspace}-gaia-collector-service"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.gaia_collector_task.arn
+  desired_count          = var.collector_min_capacity
+  launch_type            = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
@@ -144,7 +151,9 @@ resource "aws_ecs_task_definition" "gaia_server_task" {
         value = "postgresql://${aws_db_instance.postgres_db.username}:${aws_db_instance.postgres_db.password}@${aws_db_instance.postgres_db.endpoint}/${aws_db_instance.postgres_db.db_name}"
       },
       { name = "POSTGRES_DATABASE", value = aws_db_instance.postgres_db.db_name },
-      { name = "POSTGRES_USER", value = aws_db_instance.postgres_db.username }
+      { name = "POSTGRES_USER", value = aws_db_instance.postgres_db.username },
+      { name = "REDIS_HOST", value = aws_elasticache_replication_group.elasticache.primary_endpoint_address },
+      { name = "REDIS_PORT", value = tostring(aws_elasticache_replication_group.elasticache.port) },
     ]
     secrets = [
       {
@@ -158,6 +167,10 @@ resource "aws_ecs_task_definition" "gaia_server_task" {
       {
         name      = "CLERK_SECRET_KEY",
         valueFrom = "${data.aws_secretsmanager_secret.clerk_credentials.arn}:CLERK_SECRET_KEY::"
+      },
+      {
+        name      = "MONGO_URI",
+        valueFrom = "${data.aws_secretsmanager_secret.mongo_credentials.arn}:MONGO_URI::"
       }
     ]
     logConfiguration = {
@@ -189,9 +202,31 @@ resource "aws_ecs_task_definition" "gaia_collector_task" {
     image     = "${aws_ecr_repository.gaia_collector_ecr_repository.repository_url}:latest"
     essential = true
 
-    environment = []
+    environment = [
+      { name = "PORT", value = tostring(var.gaia_collector_container_port) },
+    ]
 
     secrets = [
+      {
+        name      = "MQTT_BROKER_URL",
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_BROKER_URL::"
+      },
+      {
+        name      = "MQTT_USERNAME",
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_USERNAME::"
+      },
+      {
+        name      = "MQTT_PORT",
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_PORT::"
+      },
+      {
+        name      = "MQTT_PASSWORD",
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_PASSWORD::"
+      },
+      {
+        name      = "MQTT_TOPIC",
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_TOPIC::"
+      },
       {
         name      = "MONGO_URI",
         valueFrom = "${data.aws_secretsmanager_secret.mongo_credentials.arn}:MONGO_URI::"

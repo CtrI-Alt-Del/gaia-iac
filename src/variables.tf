@@ -31,13 +31,13 @@ variable "gaia_panel_container_memory" {
 variable "panel_min_capacity" {
   description = "Número mínimo de tasks para o Gaia Panel."
   type        = number
-  default     = 1 # Padrão para dev
+  default     = 1
 }
 
 variable "panel_max_capacity" {
   description = "Número máximo de tasks para o Gaia Panel."
   type        = number
-  default     = 2 # Padrão para dev
+  default     = 2
 }
 
 variable "gaia_server_app_mode" {
@@ -94,6 +94,12 @@ variable "gaia_collector_container_name" {
   default     = "gaia-collector"
 }
 
+variable "gaia_collector_container_port" {
+  description = "Porta que o contêiner da aplicação Gaia Collector expõe"
+  type        = number
+  default     = 4444
+}
+
 variable "gaia_collector_container_cpu" {
   description = "Unidades de CPU para alocar à tarefa Fargate para a aplicação Gaia Collector"
   type        = number
@@ -134,4 +140,16 @@ variable "elasticache_instance_class" {
   description = "Classe da instância para o banco de dados ElastiCache (ex: cache.t4g.micro)."
   type        = string
   default     = "cache.t4g.micro"
+}
+
+variable "elasticache_transit_encryption_enabled" {
+  description = "Habilita a criptografia em trânsito para o ElastiCache."
+  type        = bool
+  default     = false
+}
+
+variable "elasticache_at_rest_encryption_enabled" {
+  description = "Habilita a criptografia em repouso para o ElastiCache."
+  type        = bool
+  default     = false
 }

@@ -22,7 +22,7 @@ resource "aws_lb_target_group" "gaia_panel_tg" {
   target_type = "ip"
 
   health_check {
-    path = "/"
+    path = "/auth/sign-in"
   }
 
   tags = {
