@@ -5,6 +5,10 @@ on:
     branches:
       - production
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     uses: ./.github/workflows/ci.yaml
