@@ -60,7 +60,7 @@ jobs:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
       - name: Generate Infracost JSON
-        run: infracost breakdown --path plan.json --format json --out-file /tmp/infracost.json
+        run: infracost breakdown --path tfplan.json --format json --out-file /tmp/infracost.json
         working-directory: ./src
 
       - name: Infracost Actions
