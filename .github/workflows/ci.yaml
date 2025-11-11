@@ -50,9 +50,14 @@ jobs:
         run: terraform plan -var-file="envs/${{ inputs.environment }}.tfvars" -out=tfplan.binary
         working-directory: ./src
 
-      - name: Setup Infracost
+      - name: Terraform Show
         run: terraform show -json tfplan.binary > tfplan.json
         working-directory: ./src
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v1
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
 
       - name: Generate Infracost JSON
         run: infracost breakdown --path plan.json --format json --out-file /tmp/infracost.json
