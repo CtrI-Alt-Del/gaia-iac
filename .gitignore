@@ -3,6 +3,8 @@
 *.tfstate.*
 .terraform
 
+.infracost
+
 .env
 
 keys/gaia-jump-server-key.pem

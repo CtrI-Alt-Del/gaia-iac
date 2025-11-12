@@ -125,7 +125,7 @@ variable "collector_max_capacity" {
 }
 
 variable "rds_instance_class" {
-  description = "Classe da instância para o banco de dados RDS (ex: db.t4g.micro)."
+  description = "Classe da instância para o banco de dados RDS."
   type        = string
   default     = "db.t4g.micro"
 }
@@ -152,4 +152,10 @@ variable "elasticache_at_rest_encryption_enabled" {
   description = "Habilita a criptografia em repouso para o ElastiCache."
   type        = bool
   default     = false
+}
+
+variable "ec2_instance_type" {
+  description = "Tipo de instancia para o EC2."
+  type        = string
+  default     = "t4g.large"
 }
