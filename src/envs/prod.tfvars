@@ -23,5 +23,3 @@ ec2_instance_type = "t3.medium"
 elasticache_instance_class             = "cache.t3.micro"
 elasticache_transit_encryption_enabled = true # Habilita criptografia em trânsito
 elasticache_at_rest_encryption_enabled = true # Habilita criptografia em repouso
-
-de inicio vou ter 100 estações e 10 usuários simultaneos, dobranco a cada ano. Qual configuração recomendada para cpu e memoria para cada container, collector, server e panel? Quantos tasks cada um deveria ter, precisa de autoscalling? Quantas instancias ec2 recomendada no ECS modo EC2
