@@ -188,11 +188,11 @@ resource "aws_ecs_task_definition" "gaia_panel_task" {
     secrets = [
       {
         name      = "VITE_CLERK_PUBLISHABLE_KEY",
-        valueFrom = "${data.aws_secretsmanager_secret.clerk_credentials.arn}:CLERK_PUBLISHABLE_KEY::"
+        valueFrom = "${data.aws_secretsmanager_secret.clerk_secrets.arn}:CLERK_PUBLISHABLE_KEY::"
       },
       {
         name      = "CLERK_SECRET_KEY",
-        valueFrom = "${data.aws_secretsmanager_secret.clerk_credentials.arn}:CLERK_SECRET_KEY::"
+        valueFrom = "${data.aws_secretsmanager_secret.clerk_secrets.arn}:CLERK_SECRET_KEY::"
       }
     ]
     logConfiguration = {
@@ -235,29 +235,29 @@ resource "aws_ecs_task_definition" "gaia_server_task" {
       { name = "GAIA_PANEL_URL", value = "http://localhost:5173" },
       {
         name  = "POSTGRES_URL",
-        value = "postgresql://${aws_db_instance.postgres_db.username}:${aws_db_instance.postgres_db.password}@${aws_db_instance.postgres_db.endpoint}/${aws_db_instance.postgres_db.db_name}"
+        value = "postgresql://${aws_db_instance.postgres.username}:${aws_db_instance.postgres.password}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}"
       },
-      { name = "POSTGRES_DATABASE", value = aws_db_instance.postgres_db.db_name },
-      { name = "POSTGRES_USER", value = aws_db_instance.postgres_db.username },
+      { name = "POSTGRES_DATABASE", value = aws_db_instance.postgres.db_name },
+      { name = "POSTGRES_USER", value = aws_db_instance.postgres.username },
       { name = "REDIS_HOST", value = aws_elasticache_replication_group.elasticache.primary_endpoint_address },
       { name = "REDIS_PORT", value = tostring(aws_elasticache_replication_group.elasticache.port) },
     ]
     secrets = [
       {
         name      = "POSTGRES_PASSWORD",
-        valueFrom = aws_secretsmanager_secret.postgres_db_credentials.arn
+        valueFrom = aws_secretsmanager_secret.postgres_credentials.arn
       },
       {
         name      = "CLERK_PUBLISHABLE_KEY",
-        valueFrom = "${data.aws_secretsmanager_secret.clerk_credentials.arn}:CLERK_PUBLISHABLE_KEY::"
+        valueFrom = "${data.aws_secretsmanager_secret.clerk_secrets.arn}:CLERK_PUBLISHABLE_KEY::"
       },
       {
         name      = "CLERK_SECRET_KEY",
-        valueFrom = "${data.aws_secretsmanager_secret.clerk_credentials.arn}:CLERK_SECRET_KEY::"
+        valueFrom = "${data.aws_secretsmanager_secret.clerk_secrets.arn}:CLERK_SECRET_KEY::"
       },
       {
         name      = "MONGO_URI",
-        valueFrom = "${data.aws_secretsmanager_secret.mongo_credentials.arn}:MONGO_URI::"
+        valueFrom = "${data.aws_secretsmanager_secret.mongo_secrets.arn}:MONGO_URI::"
       }
     ]
     logConfiguration = {
@@ -304,27 +304,27 @@ resource "aws_ecs_task_definition" "gaia_collector_task" {
     secrets = [
       {
         name      = "MQTT_BROKER_URL",
-        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_BROKER_URL::"
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_secrets.arn}:MQTT_BROKER_URL::"
       },
       {
         name      = "MQTT_USERNAME",
-        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_USERNAME::"
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_secrets.arn}:MQTT_USERNAME::"
       },
       {
         name      = "MQTT_PORT",
-        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_PORT::"
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_secrets.arn}:MQTT_PORT::"
       },
       {
         name      = "MQTT_PASSWORD",
-        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_PASSWORD::"
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_secrets.arn}:MQTT_PASSWORD::"
       },
       {
         name      = "MQTT_TOPIC",
-        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_credentials.arn}:MQTT_TOPIC::"
+        valueFrom = "${data.aws_secretsmanager_secret.mqtt_broker_secrets.arn}:MQTT_TOPIC::"
       },
       {
         name      = "MONGO_URI",
-        valueFrom = "${data.aws_secretsmanager_secret.mongo_credentials.arn}:MONGO_URI::"
+        valueFrom = "${data.aws_secretsmanager_secret.mongo_secrets.arn}:MONGO_URI::"
       }
     ]
 
@@ -336,8 +336,6 @@ resource "aws_ecs_task_definition" "gaia_collector_task" {
         "awslogs-stream-prefix" = "ecs"
       }
     }
-
-
   }])
 }
 
