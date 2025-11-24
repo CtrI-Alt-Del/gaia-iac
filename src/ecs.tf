@@ -184,6 +184,10 @@ resource "aws_ecs_task_definition" "gaia_panel_task" {
         name  = "VITE_GAIA_SERVER_URL",
         value = "http://${aws_lb.alb.dns_name}/server"
       },
+      {
+        name  = "GAIA_SERVER_URL",
+        value = "http://${aws_lb.alb.dns_name}/server"
+      },
     ]
     secrets = [
       {
@@ -235,12 +239,13 @@ resource "aws_ecs_task_definition" "gaia_server_task" {
       { name = "GAIA_PANEL_URL", value = "http://localhost:5173" },
       {
         name  = "POSTGRES_URL",
-        value = "postgresql://${aws_db_instance.postgres.username}:${aws_db_instance.postgres.password}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}"
+        value = "postgresql://${aws_db_instance.postgres.username}:${aws_db_instance.postgres.password}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}?connection_limit=10&pool_timeout=30"
       },
       { name = "POSTGRES_DATABASE", value = aws_db_instance.postgres.db_name },
       { name = "POSTGRES_USER", value = aws_db_instance.postgres.username },
-      { name = "REDIS_HOST", value = aws_elasticache_replication_group.elasticache.primary_endpoint_address },
-      { name = "REDIS_PORT", value = tostring(aws_elasticache_replication_group.elasticache.port) },
+      # { name = "REDIS_HOST", value = aws_elasticache_replication_group.elasticache.primary_endpoint_address },
+      # { name = "REDIS_PORT", value = tostring(aws_elasticache_replication_group.elasticache.port) },
+      # { name = "REDIS_PASSWORD", value = aws_elasticache_replication_group.elasticache.auth_token },
     ]
     secrets = [
       {
@@ -258,6 +263,18 @@ resource "aws_ecs_task_definition" "gaia_server_task" {
       {
         name      = "MONGO_URI",
         valueFrom = "${data.aws_secretsmanager_secret.mongo_secrets.arn}:MONGO_URI::"
+      },
+      {
+        name      = "REDIS_HOST",
+        valueFrom = "${data.aws_secretsmanager_secret.redis_secrets.arn}:REDIS_HOST::"
+      },
+      {
+        name      = "REDIS_PORT",
+        valueFrom = "${data.aws_secretsmanager_secret.redis_secrets.arn}:REDIS_PORT::"
+      },
+      {
+        name      = "REDIS_PASSWORD",
+        valueFrom = "${data.aws_secretsmanager_secret.redis_secrets.arn}:REDIS_PASSWORD::"
       }
     ]
     logConfiguration = {
