@@ -184,8 +184,8 @@ resource "aws_security_group" "gaia_collector_sg" {
   }
 }
 
-resource "aws_security_group" "postgres_db_sg" {
-  name   = "${terraform.workspace}-postgres-db-sg"
+resource "aws_security_group" "postgres_sg" {
+  name   = "${terraform.workspace}--db-sg"
   vpc_id = aws_vpc.main.id
   ingress {
     protocol        = "tcp"
