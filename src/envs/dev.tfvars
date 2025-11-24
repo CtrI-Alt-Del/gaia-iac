@@ -1,7 +1,7 @@
-gaia_server_container_cpu    = 256 # 0.25 vCPU
-gaia_server_container_memory = 512 # 512 MiB
-server_min_capacity          = 1   # Mínimo de 1 instância
-server_max_capacity          = 3   # Máximo de 2 instâncias (permite testar scaling)
+gaia_server_container_cpu    = 512  # 0.25 vCPU
+gaia_server_container_memory = 1024 # 512 MiB
+server_min_capacity          = 1    # Mínimo de 1 instância
+server_max_capacity          = 1    # Máximo de 2 instâncias (permite testar scaling)
 gaia_server_app_mode         = "staging"
 gaia_server_app_log_level    = "debug"
 
