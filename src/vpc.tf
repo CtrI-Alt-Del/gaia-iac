@@ -19,21 +19,6 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-}
-
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public_a.id
-  depends_on    = [aws_internet_gateway.gw]
-  tags = {
-    Name        = "${terraform.workspace}-nat-gw"
-    IAC         = true
-    Environment = terraform.workspace
-  }
-}
-
 resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -97,10 +82,6 @@ resource "aws_route_table" "public" {
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
-  }
 
   tags = {
     IAC         = true
@@ -172,7 +153,7 @@ resource "aws_security_group" "gaia_server_sg" {
     protocol        = "tcp"
     from_port       = var.gaia_server_container_port
     to_port         = var.gaia_server_container_port
-    security_groups = [aws_security_group.gaia_panel_sg.id]
+    security_groups = [aws_security_group.alb_sg.id]
   }
   egress {
     protocol    = "-1"
@@ -182,8 +163,7 @@ resource "aws_security_group" "gaia_server_sg" {
   }
 
   tags = {
-    IAC         = true
-    Environment = terraform.workspace
+    IAC = true
   }
 }
 
@@ -200,13 +180,12 @@ resource "aws_security_group" "gaia_collector_sg" {
   }
 
   tags = {
-    IAC         = true
-    Environment = terraform.workspace
+    IAC = true
   }
 }
 
-resource "aws_security_group" "postgres_db_sg" {
-  name   = "${terraform.workspace}-postgres-db-sg"
+resource "aws_security_group" "postgres_sg" {
+  name   = "${terraform.workspace}--db-sg"
   vpc_id = aws_vpc.main.id
   ingress {
     protocol        = "tcp"
@@ -222,8 +201,7 @@ resource "aws_security_group" "postgres_db_sg" {
   }
 
   tags = {
-    IAC         = true
-    Environment = terraform.workspace
+    IAC = true
   }
 }
 
@@ -253,8 +231,7 @@ resource "aws_security_group" "elasticache_sg" {
   }
 
   tags = {
-    IAC         = true
-    Environment = terraform.workspace
+    IAC = true
   }
 }
 
@@ -263,7 +240,30 @@ resource "aws_elasticache_subnet_group" "elasticache_sng" {
   subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 
   tags = {
-    IAC         = true
-    Environment = terraform.workspace
+    IAC = true
+  }
+}
+
+resource "aws_security_group" "ecs_host_sg" {
+  name        = "${terraform.workspace}-ecs-host-sg"
+  description = "Security Group para as instancias EC2 do cluster ECS"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    IAC = true
   }
 }

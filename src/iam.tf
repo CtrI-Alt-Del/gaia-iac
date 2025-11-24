@@ -224,10 +224,11 @@ resource "aws_iam_policy" "read_secrets_policy" {
       Action = "secretsmanager:GetSecretValue"
       Effect = "Allow"
       Resource = [
-        aws_secretsmanager_secret.postgres_db_credentials.arn,
-        data.aws_secretsmanager_secret.clerk_credentials.arn,
-        data.aws_secretsmanager_secret.mqtt_broker_credentials.arn,
-        data.aws_secretsmanager_secret.mongo_credentials.arn,
+        aws_secretsmanager_secret.postgres_credentials.arn,
+        data.aws_secretsmanager_secret.clerk_secrets.arn,
+        data.aws_secretsmanager_secret.mqtt_broker_secrets.arn,
+        data.aws_secretsmanager_secret.mongo_secrets.arn,
+        data.aws_secretsmanager_secret.redis_secrets.arn,
       ]
     }]
   })
@@ -323,4 +324,31 @@ resource "aws_iam_policy" "ecs_exec_policy" {
 resource "aws_iam_role_policy_attachment" "ecs_task_role_attaches_exec_policy" {
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = aws_iam_policy.ecs_exec_policy.arn
+}
+
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "${terraform.workspace}-ecs-instance-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action    = "sts:AssumeRole",
+      Effect    = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    IAC = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "${terraform.workspace}-ecs-instance-profile"
+  role = aws_iam_role.ecs_instance_role.name
 }

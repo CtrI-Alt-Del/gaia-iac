@@ -9,13 +9,13 @@ output "ecr_repository_url" {
 }
 
 output "db_endpoint" {
-  description = "Endpoint do banco de dados RDS PostgreSQL"
-  value       = aws_db_instance.postgres_db.endpoint
+  description = "Endpoint do banco de dados RDS QL"
+  value       = aws_db_instance.postgres.endpoint
 }
 
 output "db_credentials_secret_arn" {
   description = "ARN do segredo com as credenciais do banco de dados"
-  value       = aws_secretsmanager_secret.postgres_db_credentials.arn
+  value       = aws_secretsmanager_secret.postgres_credentials.arn
 }
 
 output "elasticache_primary_endpoint" {
