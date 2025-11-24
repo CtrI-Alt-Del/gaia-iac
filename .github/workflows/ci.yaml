@@ -62,9 +62,3 @@ jobs:
       - name: Generate Infracost JSON
         run: infracost breakdown --path tfplan.json --format json --out-file /tmp/infracost.json
         working-directory: ./src
-
-      - name: Infracost Actions
-        uses: infracost/actions/comment@v1
-        with:
-          path: /tmp/infracost.json
-          behavior: update
