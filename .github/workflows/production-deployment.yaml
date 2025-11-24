@@ -1,12 +1,17 @@
-name: Production Deployment
+name: Staging Deployment
 
 on:
   push:
     branches:
       - production
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     uses: ./.github/workflows/deployment.yaml
     with:
       environment: prod
+    secrets: inherit
