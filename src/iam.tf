@@ -224,10 +224,11 @@ resource "aws_iam_policy" "read_secrets_policy" {
       Action = "secretsmanager:GetSecretValue"
       Effect = "Allow"
       Resource = [
-        aws_secretsmanager_secret.postgres_db_credentials.arn,
-        data.aws_secretsmanager_secret.clerk_credentials.arn,
-        data.aws_secretsmanager_secret.mqtt_broker_credentials.arn,
-        data.aws_secretsmanager_secret.mongo_credentials.arn,
+        aws_secretsmanager_secret.postgres_credentials.arn,
+        data.aws_secretsmanager_secret.clerk_secrets.arn,
+        data.aws_secretsmanager_secret.mqtt_broker_secrets.arn,
+        data.aws_secretsmanager_secret.mongo_secrets.arn,
+        data.aws_secretsmanager_secret.redis_secrets.arn,
       ]
     }]
   })
